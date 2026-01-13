@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>イベントプロモーション命名生成ツール</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Naming Generator</h1>
+            <p class="subtitle">イベント広告命名ツール</p>
+        </header>
+
+        <main>
+            <!-- STEP 1: URL INPUT (Primary) -->
+            <section class="card primary-card">
+                <div class="url-input-wrapper">
+                    <span class="material-icons-round icon">link</span>
+                    <input type="url" id="lpUrl" placeholder="LP URLを入力して自動推定..." autocomplete="off">
+                </div>
+                <p class="hint">URLから日付・形式・イベント名を自動推定します</p>
+            </section>
+
+            <!-- STEP 2: ESTIMATED / MANUAL CORE INFO -->
+            <section class="card core-card">
+                <div class="row">
+                    <div class="col">
+                        <label class="label-minimal">開催日</label>
+                        <input type="date" id="eventDate" class="input-minimal">
+                        <span id="dateSuggested" class="suggested-badge hidden">Suggested</span>
+                    </div>
+                    <div class="col">
+                        <label class="label-minimal">形式</label>
+                        <div class="toggle-group" id="modeToggle">
+                            <button class="toggle-btn" data-mode="Online">Online</button>
+                            <button class="toggle-btn" data-mode="Offline">Offline</button>
+                        </div>
+                        <span id="modeSuggested" class="suggested-badge hidden">Suggested</span>
+                    </div>
+                </div>
+                <div class="row single-col">
+                    <label class="label-minimal">イベント名 <span class="sub-label">(日付は含めない概念名)</span></label>
+                    <div id="eventNameChips" class="chip-row"></div>
+                    <input type="text" id="eventNameInput" class="input-minimal"
+                        placeholder="例: InfoSession, Kokorozashi">
+                    <span id="nameSuggested" class="suggested-badge hidden">Suggested</span>
+                </div>
+            </section>
+
+            <!-- STEP 3: TARGETING -->
+            <section class="card targeting-card">
+                <div class="row single-col">
+                    <label class="label-minimal">配信地域</label>
+                    <div class="tag-input-container" id="regionTagContainer">
+                        <div class="tags-list" id="regionTags"></div>
+                        <input type="text" id="regionInput" class="tag-input" placeholder="国名・州名を入力してEnter">
+                    </div>
+                    <p class="hint">例: 日本, シンガポール, ニュージャージー, California</p>
+                </div>
+                <div class="row single-col">
+                    <label class="label-minimal">配信切り口</label>
+                    <div class="tag-input-container" id="segmentTagContainer">
+                        <div class="tags-list" id="segmentTags"></div>
+                        <input type="text" id="segmentInput" class="tag-input" placeholder="ターゲットを入力してEnter">
+                    </div>
+                    <div class="quick-add-row" id="segmentQuickAdd">
+                        <button class="text-btn" data-add="Position">Position</button>
+                        <button class="text-btn" data-add="Industry">Industry</button>
+                        <button class="text-btn" data-add="Interest">Interest</button>
+                        <button class="text-btn" data-add="Remarketing">Remarketing</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 4: CREATIVE -->
+            <section class="card creative-card">
+                <div class="row">
+                    <div class="col">
+                        <label class="label-minimal">パターン</label>
+                        <div class="chip-container" id="patternChips">
+                            <button class="chip multi" data-value="A">A</button>
+                            <button class="chip multi" data-value="B">B</button>
+                            <button class="chip multi" data-value="C">C</button>
+                            <button class="chip multi" data-value="D">D</button>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <label class="label-minimal">サイズ</label>
+                        <div class="chip-container" id="sizeChips">
+                            <button class="chip multi" data-value="Square">1:1</button>
+                            <button class="chip multi" data-value="45">4:5</button>
+                            <button class="chip multi" data-value="916">9:16</button>
+                            <button class="chip multi" data-value="Horizontal">1.91:1</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 5: PREVIEW -->
+            <section class="preview-section">
+                <div class="preview-header-row">
+                    <h2>Generated Names</h2>
+                    <span id="countPreview" class="count-badge"></span>
+                </div>
+                <div id="warnMessage" class="warn-box hidden"></div>
+
+                <div class="preview-block">
+                    <button class="copy-icon-btn" data-target="campaignResult"><span
+                            class="material-icons-round">content_copy</span></button>
+                    <span class="block-label">Campaign</span>
+                    <pre><code id="campaignResult"></code></pre>
+                </div>
+                <div class="preview-block">
+                    <button class="copy-icon-btn" data-target="adGroupResult"><span
+                            class="material-icons-round">content_copy</span></button>
+                    <span class="block-label">Ad Groups</span>
+                    <pre><code id="adGroupResult"></code></pre>
+                </div>
+                <div class="preview-block">
+                    <button class="copy-icon-btn" data-target="adResult"><span
+                            class="material-icons-round">content_copy</span></button>
+                    <span class="block-label">Ads</span>
+                    <pre><code id="adResult"></code></pre>
+                </div>
+                <div class="footer-action">
+                    <button id="downloadCsvBtn" class="btn-main">
+                        <span class="material-icons-round">download</span>
+                        CSVをダウンロード (Excelで開けます)
+                    </button>
+                    <button id="copyAllBtn" class="btn-secondary">
+                        <span class="material-icons-round">content_copy</span>
+                        クリップボードにコピー
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Enhanced Popover for Unconfirmed Chips -->
+    <div id="editPopover" class="popover hidden">
+        <div class="popover-header">地域コードを確定</div>
+        <div id="popoverSuggestions" class="popover-suggestions">
+            <!-- Suggestions injected here -->
+        </div>
+        <div class="popover-advanced">
+            <details>
+                <summary>手動でコードを入力</summary>
+                <div class="manual-input-row">
+                    <input type="text" id="popoverInput" placeholder="ISO国コード (例: OM)">
+                    <button id="popoverConfirm" class="btn-small">確定</button>
+                </div>
+            </details>
+        </div>
+        <button id="popoverCancel" class="btn-small muted">閉じる</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
