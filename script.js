@@ -214,7 +214,7 @@ const el = {
     // UTM
     sourceInput: document.getElementById('sourceInput'),
     sourceQuickAdd: document.getElementById('sourceQuickAdd'),
-    mediumChips: document.getElementById('mediumChips'),
+    mediumRadios: document.getElementById('mediumRadios'),
     // Results
     campaignResult: document.getElementById('campaignResult'),
     adGroupResult: document.getElementById('adGroupResult'),
@@ -247,16 +247,35 @@ function init() {
 
     el.targetInput.addEventListener('input', (e) => { state.target = sanitizeName(e.target.value); updatePreview(); });
 
-    el.sourceInput.addEventListener('input', (e) => { state.source = e.target.value.trim().toLowerCase(); updatePreview(); });
+    el.sourceInput.addEventListener('input', (e) => {
+        state.source = e.target.value.trim().toLowerCase();
+        updateSourceButtons();
+        updatePreview();
+    });
+
     el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-        el.sourceInput.value = btn.dataset.source;
-        state.source = btn.dataset.source;
+        const val = btn.dataset.source;
+        el.sourceInput.value = val;
+        state.source = val;
+        updateSourceButtons();
         updatePreview();
     }));
 
+    // Medium Radio Buttons
+    el.mediumRadios.querySelectorAll('input[name="medium"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                state.medium = e.target.value;
+                updatePreview();
+            }
+        });
+    });
+
+    // Default Medium
+    state.medium = 'banner';
+
     setupMultiChips(el.patternChips, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
-    setupSingleChip(el.mediumChips, v => state.medium = v);
 
     setupCopyButtons();
     setupPopover();
@@ -510,22 +529,27 @@ function closePopover() {
     popoverTarget = null;
 }
 
-// --- MULTI CHIPS ---
-function setupMultiChips(container, setter) {
-    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
-        c.classList.toggle('active');
-        setter(Array.from(container.querySelectorAll('.chip.active')).map(x => x.dataset.value));
-        updatePreview();
-    }));
+function updateSourceButtons() {
+    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.source === state.source);
+    });
 }
 
-function setupSingleChip(container, setter) {
-    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
-        container.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
-        c.classList.add('active');
-        setter(c.dataset.value);
-        updatePreview();
-    }));
+// --- MULTI CHIPS ---
+function setupMultiChips(container, setter) {
+    // Remove existing listeners to be safe (though this function is called once)
+    // cloneNode approach or just adding listener.
+    // The previous issue might be CSS related or toggle logic. 
+    // Ensure 'chip' class exists and toggle 'active' works.
+    container.querySelectorAll('.chip').forEach(c => {
+        // Use onclick property to avoid duplicate listeners if init called multiple times
+        c.onclick = () => {
+            c.classList.toggle('active');
+            const activeValues = Array.from(container.querySelectorAll('.chip.active')).map(x => x.dataset.value);
+            setter(activeValues);
+            updatePreview();
+        };
+    });
 }
 
 // --- GENERATION ---
