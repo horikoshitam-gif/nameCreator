@@ -16,8 +16,8 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1>Naming Generator</h1>
-            <p class="subtitle">イベント広告命名ツール</p>
+            <h1>Naming & UTM Generator</h1>
+            <p class="subtitle">イベント広告命名 + UTMパラメータ生成</p>
         </header>
 
         <main>
@@ -66,18 +66,21 @@
                     </div>
                     <p class="hint">例: 日本, シンガポール, ニュージャージー, California</p>
                 </div>
-                <div class="row single-col">
-                    <label class="label-minimal">配信切り口</label>
-                    <div class="tag-input-container" id="segmentTagContainer">
-                        <div class="tags-list" id="segmentTags"></div>
-                        <input type="text" id="segmentInput" class="tag-input" placeholder="ターゲットを入力してEnter">
+                <div class="row">
+                    <div class="col">
+                        <label class="label-minimal">ターゲット <span class="sub-label">(任意)</span></label>
+                        <input type="text" id="targetInput" class="input-minimal" placeholder="例: HR, Engineer">
                     </div>
-                    <div class="quick-add-row" id="segmentQuickAdd">
-                        <button class="text-btn" data-add="Position">Position</button>
-                        <button class="text-btn" data-add="Industry">Industry</button>
-                        <button class="text-btn" data-add="Interest">Interest</button>
-                        <button class="text-btn" data-add="Remarketing">Remarketing</button>
+                    <div class="col">
+                        <label class="label-minimal">セグメント <span class="sub-label">(任意)</span></label>
+                        <input type="text" id="segmentInput" class="input-minimal" placeholder="例: Position">
                     </div>
+                </div>
+                <div class="quick-add-row" id="segmentQuickAdd">
+                    <button class="text-btn" data-segment="Position">Position</button>
+                    <button class="text-btn" data-segment="Industry">Industry</button>
+                    <button class="text-btn" data-segment="Interest">Interest</button>
+                    <button class="text-btn" data-segment="Remarketing">Remarketing</button>
                 </div>
             </section>
 
@@ -100,6 +103,31 @@
                             <button class="chip multi" data-value="45">4:5</button>
                             <button class="chip multi" data-value="916">9:16</button>
                             <button class="chip multi" data-value="Horizontal">1.91:1</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 5: UTM SETTINGS -->
+            <section class="card utm-card">
+                <div class="section-title">UTM Parameters</div>
+                <div class="row">
+                    <div class="col">
+                        <label class="label-minimal">utm_source（媒体）</label>
+                        <input type="text" id="sourceInput" class="input-minimal" placeholder="例: meta">
+                        <div class="quick-add-row" id="sourceQuickAdd">
+                            <button class="text-btn" data-source="meta">meta</button>
+                            <button class="text-btn" data-source="google">google</button>
+                            <button class="text-btn" data-source="linkedin">linkedin</button>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <label class="label-minimal">utm_medium（配信形式）</label>
+                        <div class="chip-container" id="mediumChips">
+                            <button class="chip" data-value="banner">banner</button>
+                            <button class="chip" data-value="video">video</button>
+                            <button class="chip" data-value="cpc">cpc</button>
+                            <button class="chip" data-value="dm">dm</button>
                         </div>
                     </div>
                 </div>
@@ -130,6 +158,12 @@
                             class="material-icons-round">content_copy</span></button>
                     <span class="block-label">Ads</span>
                     <pre><code id="adResult"></code></pre>
+                </div>
+                <div class="preview-block utm-preview">
+                    <button class="copy-icon-btn" data-target="utmResult"><span
+                            class="material-icons-round">content_copy</span></button>
+                    <span class="block-label">UTM Parameters</span>
+                    <pre><code id="utmResult"></code></pre>
                 </div>
                 <div class="footer-action">
                     <button id="downloadCsvBtn" class="btn-main">

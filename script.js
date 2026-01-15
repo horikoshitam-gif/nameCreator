@@ -174,16 +174,20 @@ const state = {
     date: '',
     mode: '',
     eventName: '',
+    target: '', // New
     regionTags: [],
     segmentTags: [],
     patterns: [],
     sizes: [],
+    // UTM
+    source: '', // Single value
+    medium: '',
     // Suggestions
     dateSuggested: false,
     modeSuggested: false,
     nameSuggested: false,
     // Outputs
-    campaignName: '', adGroupNames: [], adNames: []
+    campaignName: '', adGroupNames: [], adNames: [], utmRows: []
 };
 
 // --- DOM ---
@@ -200,15 +204,22 @@ const el = {
     regionInput: document.getElementById('regionInput'),
     regionTags: document.getElementById('regionTags'),
     regionContainer: document.getElementById('regionTagContainer'),
+    targetInput: document.getElementById('targetInput'), // New
     segmentInput: document.getElementById('segmentInput'),
     segmentTags: document.getElementById('segmentTags'),
     segmentContainer: document.getElementById('segmentTagContainer'),
     segmentQuickAdd: document.getElementById('segmentQuickAdd'),
     patternChips: document.getElementById('patternChips'),
     sizeChips: document.getElementById('sizeChips'),
+    // UTM
+    sourceInput: document.getElementById('sourceInput'),
+    sourceQuickAdd: document.getElementById('sourceQuickAdd'),
+    mediumChips: document.getElementById('mediumChips'),
+    // Results
     campaignResult: document.getElementById('campaignResult'),
     adGroupResult: document.getElementById('adGroupResult'),
     adResult: document.getElementById('adResult'),
+    utmResult: document.getElementById('utmResult'), // New
     countPreview: document.getElementById('countPreview'),
     warnMessage: document.getElementById('warnMessage'),
     downloadCsvBtn: document.getElementById('downloadCsvBtn'),
@@ -232,10 +243,20 @@ function init() {
 
     setupTagInput(el.regionInput, el.regionContainer, 'regionTags', normalizeRegion);
     setupTagInput(el.segmentInput, el.segmentContainer, 'segmentTags', (t) => ({ text: t, code: null, valid: true }));
-    el.segmentQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { addTag('segmentTags', btn.dataset.add, t => ({ text: t, code: null, valid: true })); renderTags('segmentTags', el.segmentTags); updatePreview(); }));
+    el.segmentQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { addTag('segmentTags', btn.dataset.segment, t => ({ text: t, code: null, valid: true })); renderTags('segmentTags', el.segmentTags); updatePreview(); }));
+
+    el.targetInput.addEventListener('input', (e) => { state.target = sanitizeName(e.target.value); updatePreview(); });
+
+    el.sourceInput.addEventListener('input', (e) => { state.source = e.target.value.trim().toLowerCase(); updatePreview(); });
+    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+        el.sourceInput.value = btn.dataset.source;
+        state.source = btn.dataset.source;
+        updatePreview();
+    }));
 
     setupMultiChips(el.patternChips, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
+    setupSingleChip(el.mediumChips, v => state.medium = v);
 
     setupCopyButtons();
     setupPopover();
@@ -498,6 +519,15 @@ function setupMultiChips(container, setter) {
     }));
 }
 
+function setupSingleChip(container, setter) {
+    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+        container.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        setter(c.dataset.value);
+        updatePreview();
+    }));
+}
+
 // --- GENERATION ---
 function updatePreview() {
     const dateStr = (state.date || '').replace(/-/g, '') || 'YYYYMMDD';
@@ -526,6 +556,42 @@ function updatePreview() {
     state.adNames = [];
     patterns.forEach(p => sizes.forEach(sz => state.adNames.push(`${dateStr}_${eventStr}_${p}_${sz}`)));
     el.adResult.textContent = state.adNames.join('\n');
+
+    // UTM Generation
+    state.utmRows = [];
+    const source = state.source || 'source';
+    const medium = state.medium || 'medium';
+
+    // Iterate over valid regions (Ad Group level)
+    regions.forEach(r => {
+        // utm_campaign = {date}_{event}_{region}
+        const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+
+        // Segments loop (if any)
+        const currentSegments = segments.length ? segments : [''];
+
+        currentSegments.forEach(seg => {
+            const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
+
+            // Ads loop (Pattern x Size)
+            patterns.forEach(p => {
+                sizes.forEach(sz => {
+                    // Start of sanitization
+                    const cleanSz = sz.replace(/:/g, '');
+                    const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
+
+                    // utm_content = {target?}_{segment?}_{pattern}_{size}
+                    // Filter empty parts
+                    const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                    const utmContent = contentParts.join('_');
+
+                    // Display string: source | medium | campaign | content
+                    state.utmRows.push(`${source} | ${medium} | ${utmCampaign} | ${utmContent}`);
+                });
+            });
+        });
+    });
+    el.utmResult.textContent = state.utmRows.join('\n');
 
     el.countPreview.textContent = `Total: ${1 + state.adGroupNames.length + state.adNames.length} items`;
 
@@ -572,17 +638,51 @@ function setupCopyButtons() {
 }
 
 function generateCSV() {
-    const rows = ['campaign,ad_group,ad'];
-    const groups = state.adGroupNames.length ? state.adGroupNames : [state.campaignName];
-    const ads = state.adNames.length ? state.adNames : ['Ad'];
-    groups.forEach(g => ads.forEach(a => rows.push(`${state.campaignName},${g},${a}`)));
-    return rows.join('\n');
+    const header = 'campaign,ad_group,ad,utm_source,utm_medium,utm_campaign,utm_content';
+    const rows = [header];
+
+    // We need to regenerate the exact mapping to ensure rows align.
+    // Logic: Region -> Segment -> Pattern -> Size
+    const dateStr = (state.date || '').replace(/-/g, '') || 'YYYYMMDD';
+    const eventStr = state.eventName || 'EventName';
+    const validRegions = state.regionTags.filter(t => t.valid).map(t => t.code);
+    const regions = validRegions.length ? validRegions : ['Region'];
+    const segments = state.segmentTags.length ? state.segmentTags.map(t => sanitizeName(t.text) || t.text) : [];
+    const patterns = state.patterns.length ? state.patterns : ['Pat'];
+    const sizes = state.sizes.length ? state.sizes : ['Size'];
+    const source = state.source || 'source';
+    const medium = state.medium || 'medium';
+
+    const campaignName = `${dateStr}_${state.mode || 'Mode'}_${eventStr}`;
+
+    regions.forEach(r => {
+        const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+        const currentSegments = segments.length ? segments : [''];
+
+        currentSegments.forEach(seg => {
+            const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
+
+            patterns.forEach(p => {
+                sizes.forEach(sz => {
+                    const cleanSz = sz.replace(/:/g, '');
+                    const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
+                    const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                    const utmContent = contentParts.join('_');
+
+                    rows.push(`${campaignName},${adGroupName},${adName},${source},${medium},${utmCampaign},${utmContent}`);
+                });
+            });
+        });
+    });
+
+    // Add BOM for Excel support
+    return '\uFEFF' + rows.join('\n');
 }
 
 function generateFilename() {
     const dateStr = (state.date || '').replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
     const eventStr = state.eventName || 'event';
-    return `campaign_names_${dateStr}_${eventStr}.csv`;
+    return `utm_parameters_${dateStr}_${eventStr}.csv`;
 }
 
 function downloadFile(content, filename) {
