@@ -180,8 +180,8 @@ const state = {
     patterns: [],
     sizes: [],
     // UTM
-    source: '', // Single value
-    medium: '',
+    sources: [], // Array of strings (valid tags only)
+    medium: 'banner', // Default value
     // Suggestions
     dateSuggested: false,
     modeSuggested: false,
@@ -213,8 +213,11 @@ const el = {
     sizeChips: document.getElementById('sizeChips'),
     // UTM
     sourceInput: document.getElementById('sourceInput'),
+    sourceTags: document.getElementById('sourceTags'), // Container for tags
+    sourceTagContainer: document.getElementById('sourceTagContainer'),
+    sourceError: document.getElementById('sourceError'),
     sourceQuickAdd: document.getElementById('sourceQuickAdd'),
-    mediumRadios: document.getElementById('mediumRadios'),
+    mediumChips: document.getElementById('mediumChips'),
     // Results
     campaignResult: document.getElementById('campaignResult'),
     adGroupResult: document.getElementById('adGroupResult'),
@@ -247,32 +250,13 @@ function init() {
 
     el.targetInput.addEventListener('input', (e) => { state.target = sanitizeName(e.target.value); updatePreview(); });
 
-    el.sourceInput.addEventListener('input', (e) => {
-        state.source = e.target.value.trim().toLowerCase();
-        updateSourceButtons();
-        updatePreview();
+    setupSourceInput();
+
+    setupSingleChip(el.mediumChips, v => state.medium = v);
+    // Set initial active state for default medium
+    Array.from(el.mediumChips.querySelectorAll('.chip')).forEach(c => {
+        if (c.dataset.value === state.medium) c.classList.add('active');
     });
-
-    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-        const val = btn.dataset.source;
-        el.sourceInput.value = val;
-        state.source = val;
-        updateSourceButtons();
-        updatePreview();
-    }));
-
-    // Medium Radio Buttons
-    el.mediumRadios.querySelectorAll('input[name="medium"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                state.medium = e.target.value;
-                updatePreview();
-            }
-        });
-    });
-
-    // Default Medium
-    state.medium = 'banner';
 
     setupMultiChips(el.patternChips, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
@@ -529,10 +513,69 @@ function closePopover() {
     popoverTarget = null;
 }
 
-function updateSourceButtons() {
-    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.source === state.source);
+function setupSourceInput() {
+    const addSource = (text) => {
+        const norm = text.trim().toLowerCase();
+        if (!norm) return;
+
+        // Validation: a-z0-9_-
+        if (!/^[a-z0-9_-]+$/.test(norm)) {
+            el.sourceError.classList.remove('hidden');
+            setTimeout(() => el.sourceError.classList.add('hidden'), 3000);
+            return;
+        }
+
+        // Duplicate check
+        if (!state.sources.includes(norm)) {
+            state.sources.push(norm);
+            renderSourceTags();
+            updatePreview();
+        }
+        el.sourceInput.value = '';
+        el.sourceError.classList.add('hidden');
+    };
+
+    el.sourceInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSource(el.sourceInput.value);
+        }
     });
+
+    el.sourceInput.addEventListener('blur', () => {
+        if (el.sourceInput.value.trim()) {
+            addSource(el.sourceInput.value);
+        }
+    });
+
+    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+        addSource(btn.dataset.source);
+    }));
+}
+
+function renderSourceTags() {
+    el.sourceTags.innerHTML = '';
+    state.sources.forEach(tag => {
+        const div = document.createElement('div');
+        div.className = 'tag-chip valid';
+        div.innerHTML = `<span>${tag}</span><span class="material-icons-round remove">close</span>`;
+        div.querySelector('.remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            state.sources = state.sources.filter(t => t !== tag);
+            renderSourceTags();
+            updatePreview();
+        });
+        el.sourceTags.appendChild(div);
+    });
+}
+
+function setupSingleChip(container, setter) {
+    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+        container.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        setter(c.dataset.value);
+        updatePreview();
+    }));
 }
 
 // --- MULTI CHIPS ---
@@ -582,39 +625,43 @@ function updatePreview() {
     el.adResult.textContent = state.adNames.join('\n');
 
     // UTM Generation
+    // UTM Generation
     state.utmRows = [];
-    const source = state.source || 'source';
-    const medium = state.medium || 'medium';
 
-    // Iterate over valid regions (Ad Group level)
-    regions.forEach(r => {
-        // utm_campaign = {date}_{event}_{region}
-        const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+    if (state.sources.length === 0) {
+        state.utmRows.push('Warning: utm_source is required (Set at least one source).');
+        el.downloadCsvBtn.disabled = true;
+        el.copyAllBtn.disabled = true;
+    } else {
+        el.downloadCsvBtn.disabled = false;
+        el.copyAllBtn.disabled = false;
 
-        // Segments loop (if any)
-        const currentSegments = segments.length ? segments : [''];
+        const medium = state.medium || 'banner';
 
-        currentSegments.forEach(seg => {
-            const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
+        // Iterate over valid regions (Ad Group level)
+        regions.forEach(r => {
+            const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+            const currentSegments = segments.length ? segments : [''];
 
-            // Ads loop (Pattern x Size)
-            patterns.forEach(p => {
-                sizes.forEach(sz => {
-                    // Start of sanitization
-                    const cleanSz = sz.replace(/:/g, '');
-                    const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
+            currentSegments.forEach(seg => {
+                // Ads loop (Pattern x Size)
+                patterns.forEach(p => {
+                    sizes.forEach(sz => {
+                        const cleanSz = sz.replace(/:/g, '');
+                        // utm_content = {target?}_{segment?}_{pattern}_{size}
+                        const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                        const utmContent = contentParts.join('_');
 
-                    // utm_content = {target?}_{segment?}_{pattern}_{size}
-                    // Filter empty parts
-                    const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
-                    const utmContent = contentParts.join('_');
-
-                    // Display string: source | medium | campaign | content
-                    state.utmRows.push(`${source} | ${medium} | ${utmCampaign} | ${utmContent}`);
+                        // Cartesian Product: Sources
+                        state.sources.forEach(source => {
+                            // Display string: source | medium | campaign | content
+                            state.utmRows.push(`${source} | ${medium} | ${utmCampaign} | ${utmContent}`);
+                        });
+                    });
                 });
             });
         });
-    });
+    }
     el.utmResult.textContent = state.utmRows.join('\n');
 
     el.countPreview.textContent = `Total: ${1 + state.adGroupNames.length + state.adNames.length} items`;
@@ -674,9 +721,7 @@ function generateCSV() {
     const segments = state.segmentTags.length ? state.segmentTags.map(t => sanitizeName(t.text) || t.text) : [];
     const patterns = state.patterns.length ? state.patterns : ['Pat'];
     const sizes = state.sizes.length ? state.sizes : ['Size'];
-    const source = state.source || 'source';
-    const medium = state.medium || 'medium';
-
+    const medium = state.medium || 'banner'; // default fallback
     const campaignName = `${dateStr}_${state.mode || 'Mode'}_${eventStr}`;
 
     regions.forEach(r => {
@@ -693,7 +738,9 @@ function generateCSV() {
                     const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
                     const utmContent = contentParts.join('_');
 
-                    rows.push(`${campaignName},${adGroupName},${adName},${source},${medium},${utmCampaign},${utmContent}`);
+                    state.sources.forEach(source => {
+                        rows.push(`${campaignName},${adGroupName},${adName},${source},${medium},${utmCampaign},${utmContent}`);
+                    });
                 });
             });
         });

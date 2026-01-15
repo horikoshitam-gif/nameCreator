@@ -113,9 +113,14 @@
                 <div class="section-title">UTM Parameters</div>
                 <div class="row">
                     <div class="col">
-                        <label class="label-minimal">utm_source（媒体）</label>
-                        <input type="text" id="sourceInput" class="input-minimal" placeholder="例: meta">
+                        <label class="label-minimal">utm_source（媒体） <span class="required">*Req</span></label>
+                        <div class="tag-input-container" id="sourceTagContainer">
+                            <div class="tags-list" id="sourceTags"></div>
+                            <input type="text" id="sourceInput" class="tag-input" placeholder="例: meta (Enterで追加)">
+                        </div>
+                        <div id="sourceError" class="error-msg hidden">半角英数・アンダースコア・ハイフンのみ使用可能です</div>
                         <div class="quick-add-row" id="sourceQuickAdd">
+                            <span class="label-sub">Quick Add:</span>
                             <button class="text-btn" data-source="meta">meta</button>
                             <button class="text-btn" data-source="google">google</button>
                             <button class="text-btn" data-source="linkedin">linkedin</button>
@@ -123,12 +128,11 @@
                     </div>
                     <div class="col">
                         <label class="label-minimal">utm_medium（配信形式）</label>
-                        <div class="radio-group-container" id="mediumRadios">
-                            <label class="radio-label"><input type="radio" name="medium" value="banner" checked>
-                                banner</label>
-                            <label class="radio-label"><input type="radio" name="medium" value="video"> video</label>
-                            <label class="radio-label"><input type="radio" name="medium" value="cpc"> cpc</label>
-                            <label class="radio-label"><input type="radio" name="medium" value="dm"> dm</label>
+                        <div class="chip-container" id="mediumChips">
+                            <button class="chip" data-value="banner">banner</button>
+                            <button class="chip" data-value="video">video</button>
+                            <button class="chip" data-value="cpc">cpc</button>
+                            <button class="chip" data-value="dm">dm</button>
                         </div>
                     </div>
                 </div>
