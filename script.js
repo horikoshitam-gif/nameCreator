@@ -187,7 +187,7 @@ const state = {
     modeSuggested: false,
     nameSuggested: false,
     // Outputs
-    campaignName: '', adGroupNames: [], adNames: [], utmRows: []
+    campaignName: '', adGroupNames: [], adNames: [], utmRows: [], fullUrlRows: []
 };
 
 // --- DOM ---
@@ -222,7 +222,9 @@ const el = {
     campaignResult: document.getElementById('campaignResult'),
     adGroupResult: document.getElementById('adGroupResult'),
     adResult: document.getElementById('adResult'),
-    utmResult: document.getElementById('utmResult'), // New
+    adResult: document.getElementById('adResult'),
+    utmResult: document.getElementById('utmResult'),
+    fullUrlResult: document.getElementById('fullUrlResult'), // New for v2.3
     countPreview: document.getElementById('countPreview'),
     warnMessage: document.getElementById('warnMessage'),
     downloadCsvBtn: document.getElementById('downloadCsvBtn'),
@@ -633,11 +635,12 @@ function updatePreview() {
     el.adResult.textContent = state.adNames.join('\n');
 
     // UTM Generation
-    // UTM Generation
     state.utmRows = [];
+    state.fullUrlRows = [];
 
     if (state.sources.length === 0) {
-        state.utmRows.push('Warning: utm_source is required (Set at least one source).');
+        state.utmRows.push('Warning: utm_source is required.');
+        el.fullUrlResult.textContent = '';
         el.downloadCsvBtn.disabled = true;
         el.copyAllBtn.disabled = true;
     } else {
@@ -662,8 +665,25 @@ function updatePreview() {
 
                         // Cartesian Product: Sources
                         state.sources.forEach(source => {
-                            // Display string: source | medium | campaign | content
-                            state.utmRows.push(`${source} | ${medium} | ${utmCampaign} | ${utmContent}`);
+                            // v2.3 Format: utm_source=...&utm_medium=...
+                            const params = [
+                                `utm_source=${source}`,
+                                `utm_medium=${medium}`,
+                                `utm_campaign=${utmCampaign}`,
+                                `utm_content=${utmContent}`
+                            ];
+                            const utmString = params.join('&');
+                            state.utmRows.push(utmString);
+
+                            // Full URL
+                            let fullUrl = '';
+                            if (state.lpUrl) {
+                                const separator = state.lpUrl.includes('?') ? '&' : '?';
+                                fullUrl = `${state.lpUrl}${separator}${utmString}`;
+                            } else {
+                                fullUrl = `(LP_URL_REQUIRED)${utmString}`;
+                            }
+                            state.fullUrlRows.push(fullUrl);
                         });
                     });
                 });
@@ -671,8 +691,9 @@ function updatePreview() {
         });
     }
     el.utmResult.textContent = state.utmRows.join('\n');
+    el.fullUrlResult.textContent = state.fullUrlRows.join('\n');
 
-    el.countPreview.textContent = `Total: ${1 + state.adGroupNames.length + state.adNames.length} items`;
+    el.countPreview.textContent = `Total: ${state.fullUrlRows.length} items`;
 
     const hasUnconfirmed = state.regionTags.some(t => !t.valid);
     if (hasUnconfirmed) { el.warnMessage.textContent = '⚠️ 未確定の地域があります。クリックして確定してください。'; el.warnMessage.classList.remove('hidden'); }
@@ -717,7 +738,7 @@ function setupCopyButtons() {
 }
 
 function generateCSV() {
-    const header = 'campaign,ad_group,ad,utm_source,utm_medium,utm_campaign,utm_content';
+    const header = 'campaign_name,ad_group_name,ad_name,utm_string,full_url';
     const rows = [header];
 
     // We need to regenerate the exact mapping to ensure rows align.
@@ -747,7 +768,23 @@ function generateCSV() {
                     const utmContent = contentParts.join('_');
 
                     state.sources.forEach(source => {
-                        rows.push(`${campaignName},${adGroupName},${adName},${source},${medium},${utmCampaign},${utmContent}`);
+                        const params = [
+                            `utm_source=${source}`,
+                            `utm_medium=${medium}`,
+                            `utm_campaign=${utmCampaign}`,
+                            `utm_content=${utmContent}`
+                        ];
+                        const utmString = params.join('&');
+
+                        let fullUrl = '';
+                        if (state.lpUrl) {
+                            const separator = state.lpUrl.includes('?') ? '&' : '?';
+                            fullUrl = `${state.lpUrl}${separator}${utmString}`;
+                        } else {
+                            fullUrl = `(LP_URL_REQUIRED)${utmString}`;
+                        }
+
+                        rows.push(`${campaignName},${adGroupName},${adName},${utmString},${fullUrl}`);
                     });
                 });
             });
