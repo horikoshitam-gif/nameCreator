@@ -367,10 +367,11 @@ function setupTagInput(input, container, stateKey, normalizer) {
     container.addEventListener('click', () => input.focus());
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
+            if (e.isComposing) return; // Fix: Ignore IME confirm
             e.preventDefault();
             const parts = input.value.split(/[,、]+/).map(s => s.trim()).filter(s => s);
             parts.forEach(p => addTag(stateKey, p, normalizer));
-            input.value = '';
+            input.value = ''; // Ensure clear
             renderTags(stateKey, document.getElementById(stateKey));
             updatePreview();
             // Keep focus for continuous input
@@ -537,6 +538,7 @@ function setupSourceInput() {
 
     el.sourceInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
+            if (e.isComposing) return; // Fix: Ignore IME confirm
             e.preventDefault();
             addSource(el.sourceInput.value);
         }
@@ -548,7 +550,9 @@ function setupSourceInput() {
         }
     });
 
-    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    el.sourceQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Safety
+        console.log('Source Quick Add Clicked:', btn.dataset.source);
         addSource(btn.dataset.source);
     }));
 }
@@ -570,7 +574,9 @@ function renderSourceTags() {
 }
 
 function setupSingleChip(container, setter) {
-    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    container.querySelectorAll('.chip').forEach(c => c.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('Single Chip Clicked:', c.dataset.value);
         container.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
         c.classList.add('active');
         setter(c.dataset.value);
@@ -586,7 +592,9 @@ function setupMultiChips(container, setter) {
     // Ensure 'chip' class exists and toggle 'active' works.
     container.querySelectorAll('.chip').forEach(c => {
         // Use onclick property to avoid duplicate listeners if init called multiple times
-        c.onclick = () => {
+        c.onclick = (e) => {
+            if (e) e.preventDefault();
+            console.log('Multi Chip Clicked:', c.dataset.value);
             c.classList.toggle('active');
             const activeValues = Array.from(container.querySelectorAll('.chip.active')).map(x => x.dataset.value);
             setter(activeValues);
@@ -771,4 +779,8 @@ function downloadFile(content, filename) {
 
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
-init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
