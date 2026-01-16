@@ -649,23 +649,27 @@ function updatePreview() {
 
         const medium = state.medium || 'banner';
 
-        // Iterate over valid regions (Ad Group level)
-        regions.forEach(r => {
-            const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
-            const currentSegments = segments.length ? segments : [''];
+        // v2.4 Change: Outer Loop is Source to group output
+        state.sources.forEach(source => {
+            // Add Header for Preview
+            const header = `=== ${source} ===`;
+            state.utmRows.push(state.utmRows.length > 0 ? `\n${header}` : header);
+            state.fullUrlRows.push(state.fullUrlRows.length > 0 ? `\n${header}` : header);
 
-            currentSegments.forEach(seg => {
-                // Ads loop (Pattern x Size)
-                patterns.forEach(p => {
-                    sizes.forEach(sz => {
-                        const cleanSz = sz.replace(/:/g, '');
-                        // utm_content = {target?}_{segment?}_{pattern}_{size}
-                        const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
-                        const utmContent = contentParts.join('_');
+            // Regions -> Segments -> Patterns -> Sizes
+            regions.forEach(r => {
+                const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+                const currentSegments = segments.length ? segments : [''];
 
-                        // Cartesian Product: Sources
-                        state.sources.forEach(source => {
-                            // v2.3 Format: utm_source=...&utm_medium=...
+                currentSegments.forEach(seg => {
+                    patterns.forEach(p => {
+                        sizes.forEach(sz => {
+                            const cleanSz = sz.replace(/:/g, '');
+                            // utm_content = {target?}_{segment?}_{pattern}_{size}
+                            const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                            const utmContent = contentParts.join('_');
+
+                            // Params
                             const params = [
                                 `utm_source=${source}`,
                                 `utm_medium=${medium}`,
@@ -693,11 +697,13 @@ function updatePreview() {
     el.utmResult.textContent = state.utmRows.join('\n');
     el.fullUrlResult.textContent = state.fullUrlRows.join('\n');
 
-    el.countPreview.textContent = `Total: ${state.fullUrlRows.length} items`;
+    // Count is total data rows (excluding headers)
+    const totalRows = state.sources.length * regions.length * (segments.length || 1) * patterns.length * sizes.length;
+    el.countPreview.textContent = `Total: ${totalRows} items`;
 
     const hasUnconfirmed = state.regionTags.some(t => !t.valid);
     if (hasUnconfirmed) { el.warnMessage.textContent = '⚠️ 未確定の地域があります。クリックして確定してください。'; el.warnMessage.classList.remove('hidden'); }
-    else if (state.adGroupNames.length > 100) { el.warnMessage.textContent = '⚠️ 生成数が多すぎます。'; el.warnMessage.classList.remove('hidden'); }
+    else if (totalRows > 300) { el.warnMessage.textContent = '⚠️ 生成数が多すぎます。'; el.warnMessage.classList.remove('hidden'); }
     else el.warnMessage.classList.add('hidden');
 }
 
@@ -753,21 +759,22 @@ function generateCSV() {
     const medium = state.medium || 'banner'; // default fallback
     const campaignName = `${dateStr}_${state.mode || 'Mode'}_${eventStr}`;
 
-    regions.forEach(r => {
-        const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
-        const currentSegments = segments.length ? segments : [''];
+    // v2.4 Change: Outer Loop is Source to group output
+    state.sources.forEach(source => {
+        regions.forEach(r => {
+            const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+            const currentSegments = segments.length ? segments : [''];
 
-        currentSegments.forEach(seg => {
-            const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
+            currentSegments.forEach(seg => {
+                const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
 
-            patterns.forEach(p => {
-                sizes.forEach(sz => {
-                    const cleanSz = sz.replace(/:/g, '');
-                    const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
-                    const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
-                    const utmContent = contentParts.join('_');
+                patterns.forEach(p => {
+                    sizes.forEach(sz => {
+                        const cleanSz = sz.replace(/:/g, '');
+                        const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
+                        const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                        const utmContent = contentParts.join('_');
 
-                    state.sources.forEach(source => {
                         const params = [
                             `utm_source=${source}`,
                             `utm_medium=${medium}`,
