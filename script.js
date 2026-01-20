@@ -225,6 +225,7 @@ const el = {
     adResult: document.getElementById('adResult'),
     utmResult: document.getElementById('utmResult'),
     fullUrlResult: document.getElementById('fullUrlResult'), // New for v2.3
+    mediumDescription: document.getElementById('mediumDescription'), // v3.1
     countPreview: document.getElementById('countPreview'),
     warnMessage: document.getElementById('warnMessage'),
     downloadCsvBtn: document.getElementById('downloadCsvBtn'),
@@ -254,11 +255,29 @@ function init() {
 
     setupSourceInput();
 
-    setupSingleChip(el.mediumChips, v => state.medium = v);
+    // Setup Medium Chips
+    const mediumDescriptions = {
+        paid_social: 'SNSのフィード広告（Meta / LinkedIn 等）',
+        paid_video: '動画広告（YouTube / SNS動画枠）',
+        display: 'バナー広告（GDN / Yahoo 等）',
+        cpc: '検索広告（Google / Yahoo 検索）'
+    };
+
+    setupSingleChip(el.mediumChips, (val) => {
+        state.medium = val;
+        if (el.mediumDescription && mediumDescriptions[val]) {
+            el.mediumDescription.textContent = mediumDescriptions[val];
+        }
+        updatePreview();
+    });
     // Set initial active state for default medium
     Array.from(el.mediumChips.querySelectorAll('.chip')).forEach(c => {
         if (c.dataset.value === state.medium) c.classList.add('active');
     });
+    // Set initial description
+    if (el.mediumDescription && mediumDescriptions[state.medium]) {
+        el.mediumDescription.textContent = mediumDescriptions[state.medium];
+    }
 
     setupMultiChips(el.patternChips, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
