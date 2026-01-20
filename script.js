@@ -181,7 +181,7 @@ const state = {
     sizes: [],
     // UTM
     sources: [], // Array of strings (valid tags only)
-    medium: 'banner', // Default value
+    medium: 'paid_social', // v3.0 Default
     // Suggestions
     dateSuggested: false,
     modeSuggested: false,
@@ -647,7 +647,7 @@ function updatePreview() {
         el.downloadCsvBtn.disabled = false;
         el.copyAllBtn.disabled = false;
 
-        const medium = state.medium || 'banner';
+        const medium = state.medium || 'paid_social';
 
         // v2.4 Change: Outer Loop is Source to group output
         state.sources.forEach(source => {
@@ -658,15 +658,19 @@ function updatePreview() {
 
             // Regions -> Segments -> Patterns -> Sizes
             regions.forEach(r => {
-                const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+                // v3.0 utm_campaign: {Date}_{Format}_{Event}_{Region} -> lowercase
+                // state.campaignName is already {date}_{mode}_{event}
+                const utmCampaign = `${state.campaignName}_${r}`.toLowerCase();
                 const currentSegments = segments.length ? segments : [''];
 
                 currentSegments.forEach(seg => {
                     patterns.forEach(p => {
                         sizes.forEach(sz => {
                             const cleanSz = sz.replace(/:/g, '');
-                            // utm_content = {target?}_{segment?}_{pattern}_{size}
-                            const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                            // v3.0 utm_content: {target}_{segment}_{pattern}_{size} (Fixed 4 parts, 'na' if empty)
+                            const targetStr = state.target || 'na';
+                            const segmentStr = seg || 'na';
+                            const contentParts = [targetStr, segmentStr, p, cleanSz].map(x => x.toString().toLowerCase());
                             const utmContent = contentParts.join('_');
 
                             // Params
@@ -744,11 +748,10 @@ function setupCopyButtons() {
 }
 
 function generateCSV() {
-    const header = 'campaign_name,ad_group_name,ad_name,utm_string,full_url';
+    const header = 'utm_string,full_url'; // v3.0 Reduced Columns
     const rows = [header];
 
     // We need to regenerate the exact mapping to ensure rows align.
-    // Logic: Region -> Segment -> Pattern -> Size
     const dateStr = (state.date || '').replace(/-/g, '') || 'YYYYMMDD';
     const eventStr = state.eventName || 'EventName';
     const validRegions = state.regionTags.filter(t => t.valid).map(t => t.code);
@@ -756,23 +759,23 @@ function generateCSV() {
     const segments = state.segmentTags.length ? state.segmentTags.map(t => sanitizeName(t.text) || t.text) : [];
     const patterns = state.patterns.length ? state.patterns : ['Pat'];
     const sizes = state.sizes.length ? state.sizes : ['Size'];
-    const medium = state.medium || 'banner'; // default fallback
+    const medium = state.medium || 'paid_social';
     const campaignName = `${dateStr}_${state.mode || 'Mode'}_${eventStr}`;
 
-    // v2.4 Change: Outer Loop is Source to group output
+    // Outer Loop: Source (Grouping)
     state.sources.forEach(source => {
         regions.forEach(r => {
-            const utmCampaign = `${dateStr}_${eventStr}_${r}`.toLowerCase();
+            const utmCampaign = `${campaignName}_${r}`.toLowerCase();
             const currentSegments = segments.length ? segments : [''];
 
             currentSegments.forEach(seg => {
-                const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
-
                 patterns.forEach(p => {
                     sizes.forEach(sz => {
                         const cleanSz = sz.replace(/:/g, '');
-                        const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
-                        const contentParts = [state.target, seg, p, cleanSz].filter(x => x).map(x => x.toString().toLowerCase());
+                        // v3.0 Content: force 'na'
+                        const targetStr = state.target || 'na';
+                        const segmentStr = seg || 'na';
+                        const contentParts = [targetStr, segmentStr, p, cleanSz].map(x => x.toString().toLowerCase());
                         const utmContent = contentParts.join('_');
 
                         const params = [
@@ -791,7 +794,7 @@ function generateCSV() {
                             fullUrl = `(LP_URL_REQUIRED)${utmString}`;
                         }
 
-                        rows.push(`${campaignName},${adGroupName},${adName},${utmString},${fullUrl}`);
+                        rows.push(`${utmString},${fullUrl}`);
                     });
                 });
             });

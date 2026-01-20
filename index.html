@@ -132,65 +132,66 @@
                     <div class="col">
                         <label class="label-minimal">utm_medium（配信形式）</label>
                         <div class="chip-container" id="mediumChips">
-                            <button class="chip" data-value="banner">banner</button>
-                            <button class="chip" data-value="video">video</button>
+                            <button class="chip active" data-value="paid_social">paid_social</button>
+                            <button class="chip" data-value="paid_video">paid_video</button>
+                            <button class="chip" data-value="display">display</button>
                             <button class="chip" data-value="cpc">cpc</button>
-                            <button class="chip" data-value="dm">dm</button>
                         </div>
                     </div>
                 </div>
-            </section>
+    </div>
+    </section>
 
-            <!-- STEP 5: PREVIEW -->
-            <section class="preview-section">
-                <div class="preview-header-row">
-                    <h2>Generated Names</h2>
-                    <span id="countPreview" class="count-badge"></span>
-                </div>
-                <div id="warnMessage" class="warn-box hidden"></div>
+    <!-- STEP 5: PREVIEW -->
+    <section class="preview-section">
+        <div class="preview-header-row">
+            <h2>Generated Names</h2>
+            <span id="countPreview" class="count-badge"></span>
+        </div>
+        <div id="warnMessage" class="warn-box hidden"></div>
 
-                <div class="preview-block">
-                    <button class="copy-icon-btn" data-target="campaignResult"><span
-                            class="material-icons-round">content_copy</span></button>
-                    <span class="block-label">Campaign</span>
-                    <pre><code id="campaignResult"></code></pre>
-                </div>
-                <div class="preview-block">
-                    <button class="copy-icon-btn" data-target="adGroupResult"><span
-                            class="material-icons-round">content_copy</span></button>
-                    <span class="block-label">Ad Groups</span>
-                    <pre><code id="adGroupResult"></code></pre>
-                </div>
-                <div class="preview-block">
-                    <button class="copy-icon-btn" data-target="adResult"><span
-                            class="material-icons-round">content_copy</span></button>
-                    <span class="block-label">Ads</span>
-                    <pre><code id="adResult"></code></pre>
-                </div>
-                <div class="preview-block utm-preview">
-                    <button class="copy-icon-btn" data-target="utmResult"><span
-                            class="material-icons-round">content_copy</span></button>
-                    <span class="block-label">UTM Parameters (1 line)</span>
-                    <pre><code id="utmResult"></code></pre>
-                </div>
-                <div class="preview-block full-url-preview">
-                    <button class="copy-icon-btn" data-target="fullUrlResult"><span
-                            class="material-icons-round">content_copy</span></button>
-                    <span class="block-label">Full URLs</span>
-                    <pre><code id="fullUrlResult"></code></pre>
-                </div>
-                <div class="footer-action">
-                    <button id="downloadCsvBtn" class="btn-main">
-                        <span class="material-icons-round">download</span>
-                        CSVをダウンロード (Excelで開けます)
-                    </button>
-                    <button id="copyAllBtn" class="btn-secondary">
-                        <span class="material-icons-round">content_copy</span>
-                        クリップボードにコピー
-                    </button>
-                </div>
-            </section>
-        </main>
+        <div class="preview-block">
+            <button class="copy-icon-btn" data-target="campaignResult"><span
+                    class="material-icons-round">content_copy</span></button>
+            <span class="block-label">Campaign</span>
+            <pre><code id="campaignResult"></code></pre>
+        </div>
+        <div class="preview-block">
+            <button class="copy-icon-btn" data-target="adGroupResult"><span
+                    class="material-icons-round">content_copy</span></button>
+            <span class="block-label">Ad Groups</span>
+            <pre><code id="adGroupResult"></code></pre>
+        </div>
+        <div class="preview-block">
+            <button class="copy-icon-btn" data-target="adResult"><span
+                    class="material-icons-round">content_copy</span></button>
+            <span class="block-label">Ads</span>
+            <pre><code id="adResult"></code></pre>
+        </div>
+        <div class="preview-block utm-preview">
+            <button class="copy-icon-btn" data-target="utmResult"><span
+                    class="material-icons-round">content_copy</span></button>
+            <span class="block-label">UTM Parameters (1 line)</span>
+            <pre><code id="utmResult"></code></pre>
+        </div>
+        <div class="preview-block full-url-preview">
+            <button class="copy-icon-btn" data-target="fullUrlResult"><span
+                    class="material-icons-round">content_copy</span></button>
+            <span class="block-label">Full URLs</span>
+            <pre><code id="fullUrlResult"></code></pre>
+        </div>
+        <div class="footer-action">
+            <button id="downloadCsvBtn" class="btn-main">
+                <span class="material-icons-round">download</span>
+                CSVをダウンロード (Excelで開けます)
+            </button>
+            <button id="copyAllBtn" class="btn-secondary">
+                <span class="material-icons-round">content_copy</span>
+                クリップボードにコピー
+            </button>
+        </div>
+    </section>
+    </main>
     </div>
 
     <!-- Enhanced Popover for Unconfirmed Chips -->
