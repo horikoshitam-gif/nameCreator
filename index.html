@@ -58,13 +58,23 @@
 
             <!-- STEP 3: TARGETING -->
             <section class="card targeting-card">
-                <div class="row single-col">
-                    <label class="label-minimal">配信地域</label>
-                    <div class="tag-input-container" id="regionTagContainer">
-                        <div class="tags-list" id="regionTags"></div>
-                        <input type="text" id="regionInput" class="tag-input" placeholder="国名・州名を入力してEnter">
+                <div class="row">
+                    <div class="col" style="flex: 2;">
+                        <label class="label-minimal">配信地域</label>
+                        <div class="tag-input-container" id="regionTagContainer">
+                            <div class="tags-list" id="regionTags"></div>
+                            <input type="text" id="regionInput" class="tag-input" placeholder="国名・州名を入力してEnter">
+                        </div>
+                        <p class="hint">例: 日本, シンガポール, ニュージャージー, California</p>
                     </div>
-                    <p class="hint">例: 日本, シンガポール, ニュージャージー, California</p>
+                    <div class="col" style="flex: 1;">
+                        <label class="label-minimal">Language（言語）</label>
+                        <div class="toggle-group" id="languageToggle">
+                            <button class="toggle-btn active" data-value="en">English</button>
+                            <button class="toggle-btn" data-value="jp">Japanese</button>
+                        </div>
+                        <p class="hint" style="font-size:10px; margin-top:4px;">JPの場合のみ -JP suffix</p>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col">

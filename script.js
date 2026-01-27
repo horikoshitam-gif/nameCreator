@@ -182,6 +182,7 @@ const state = {
     // UTM
     sources: [], // Array of strings (valid tags only)
     medium: 'paid_social', // v3.0 Default
+    language: 'en', // v3.2 Default
     // Suggestions
     dateSuggested: false,
     modeSuggested: false,
@@ -226,6 +227,7 @@ const el = {
     utmResult: document.getElementById('utmResult'),
     fullUrlResult: document.getElementById('fullUrlResult'), // New for v2.3
     mediumDescription: document.getElementById('mediumDescription'), // v3.1
+    languageToggle: document.getElementById('languageToggle'), // v3.2
     countPreview: document.getElementById('countPreview'),
     warnMessage: document.getElementById('warnMessage'),
     downloadCsvBtn: document.getElementById('downloadCsvBtn'),
@@ -281,6 +283,9 @@ function init() {
 
     setupMultiChips(el.patternChips, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
+
+    // v3.2 Language Toggle
+    setupToggle(el.languageToggle, v => state.language = v);
 
     setupCopyButtons();
     setupPopover();
@@ -677,9 +682,11 @@ function updatePreview() {
 
             // Regions -> Segments -> Patterns -> Sizes
             regions.forEach(r => {
-                // v3.0 utm_campaign: {Date}_{Format}_{Event}_{Region} -> lowercase
-                // state.campaignName is already {date}_{mode}_{event}
-                const utmCampaign = `${state.campaignName}_${r}`.toLowerCase();
+                // v3.2 Campaign Naming
+                const langSuffix = state.language === 'jp' ? '-jp' : '';
+                const regionPart = `${r}${langSuffix}`;
+                const modeStr = state.mode || 'online';
+                const utmCampaign = `${dateStr}_${regionPart}_${modeStr}_${eventStr}`.toLowerCase();
                 const currentSegments = segments.length ? segments : [''];
 
                 currentSegments.forEach(seg => {
@@ -784,7 +791,12 @@ function generateCSV() {
     // Outer Loop: Source (Grouping)
     state.sources.forEach(source => {
         regions.forEach(r => {
-            const utmCampaign = `${campaignName}_${r}`.toLowerCase();
+            // v3.2 Campaign Naming Logic for CSV
+            const langSuffix = state.language === 'jp' ? '-jp' : '';
+            const regionPart = `${r}${langSuffix}`;
+            const modeStr = state.mode || 'online';
+            const utmCampaign = `${dateStr}_${regionPart}_${modeStr}_${eventStr}`.toLowerCase();
+
             const currentSegments = segments.length ? segments : [''];
 
             currentSegments.forEach(seg => {
