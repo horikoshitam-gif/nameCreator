@@ -610,6 +610,18 @@ function setupSingleChip(container, setter) {
     }));
 }
 
+// --- TOGGLE BUTTONS ---
+function setupToggle(container, setter) {
+    container.querySelectorAll('.toggle-btn').forEach(btn => btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('Toggle Button Clicked:', btn.dataset.value);
+        container.querySelectorAll('.toggle-btn').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        setter(btn.dataset.value);
+        updatePreview();
+    }));
+}
+
 // --- MULTI CHIPS ---
 function setupMultiChips(container, setter) {
     // Remove existing listeners to be safe (though this function is called once)
