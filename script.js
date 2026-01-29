@@ -177,7 +177,8 @@ const state = {
     target: '', // New
     regionTags: [],
     segmentTags: [],
-    patterns: [],
+    patternTags: [],
+    patterns: [], // Legacy, will use patternTags
     sizes: [],
     // UTM
     sources: [], // Array of strings (valid tags only)
@@ -212,6 +213,7 @@ const el = {
     segmentQuickAdd: document.getElementById('segmentQuickAdd'),
     patternInput: document.getElementById('patternInput'),
     patternTags: document.getElementById('patternTags'),
+    patternTagContainer: document.getElementById('patternTagContainer'),
     patternQuickAdd: document.getElementById('patternQuickAdd'),
     sizeChips: document.getElementById('sizeChips'),
     // UTM
@@ -285,7 +287,7 @@ function init() {
     }
 
 
-    setupTagInput(el.patternInput, el.patternTags, v => state.patterns = v);
+    setupTagInput(el.patternInput, el.patternTagContainer, 'patternTags', (t) => ({ text: t, code: null, valid: true }));
     setupMultiChips(el.sizeChips, v => state.sizes = v);
 
     // v3.2 Language Toggle
@@ -668,7 +670,7 @@ function updatePreview() {
     }
     el.adGroupResult.textContent = state.adGroupNames.join('\n');
 
-    const patterns = state.patterns.length ? state.patterns : ['Pat'];
+    const patterns = state.patternTags.length ? state.patternTags.map(t => t.text) : ['Pat'];
     const sizes = state.sizes.length ? state.sizes : ['Size'];
     state.adNames = [];
     patterns.forEach(p => sizes.forEach(sz => state.adNames.push(`${dateStr}_${eventStr}_${p}_${sz}`)));
@@ -799,7 +801,7 @@ function generateCSV() {
     const validRegions = state.regionTags.filter(t => t.valid).map(t => t.code);
     const regions = validRegions.length ? validRegions : ['Region'];
     const segments = state.segmentTags.length ? state.segmentTags.map(t => sanitizeName(t.text) || t.text) : [];
-    const patterns = state.patterns.length ? state.patterns : ['Pat'];
+    const patterns = state.patternTags.length ? state.patternTags.map(t => t.text) : ['Pat'];
     const sizes = state.sizes.length ? state.sizes : ['Size'];
     const medium = state.medium || 'paid_social';
     const campaignName = `${dateStr}_${state.mode || 'Mode'}_${eventStr}`;
