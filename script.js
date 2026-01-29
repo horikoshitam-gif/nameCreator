@@ -210,7 +210,9 @@ const el = {
     segmentTags: document.getElementById('segmentTags'),
     segmentContainer: document.getElementById('segmentTagContainer'),
     segmentQuickAdd: document.getElementById('segmentQuickAdd'),
-    patternChips: document.getElementById('patternChips'),
+    patternInput: document.getElementById('patternInput'),
+    patternTags: document.getElementById('patternTags'),
+    patternQuickAdd: document.getElementById('patternQuickAdd'),
     sizeChips: document.getElementById('sizeChips'),
     // UTM
     sourceInput: document.getElementById('sourceInput'),
@@ -252,6 +254,7 @@ function init() {
     setupTagInput(el.regionInput, el.regionContainer, 'regionTags', normalizeRegion);
     setupTagInput(el.segmentInput, el.segmentContainer, 'segmentTags', (t) => ({ text: t, code: null, valid: true }));
     el.segmentQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { addTag('segmentTags', btn.dataset.segment, t => ({ text: t, code: null, valid: true })); renderTags('segmentTags', el.segmentTags); updatePreview(); }));
+    el.patternQuickAdd.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { addTag('patternTags', btn.dataset.pattern, t => ({ text: t, code: null, valid: true })); renderTags('patternTags', el.patternTags); updatePreview(); }));
 
     el.targetInput.addEventListener('input', (e) => { state.target = sanitizeName(e.target.value); updatePreview(); });
 
@@ -281,7 +284,8 @@ function init() {
         el.mediumDescription.textContent = mediumDescriptions[state.medium];
     }
 
-    setupMultiChips(el.patternChips, v => state.patterns = v);
+
+    setupTagInput(el.patternInput, el.patternTags, v => state.patterns = v);
     setupMultiChips(el.sizeChips, v => state.sizes = v);
 
     // v3.2 Language Toggle
@@ -751,7 +755,7 @@ function updatePreview() {
 
 function sanitizeName(str) {
     if (!str) return '';
-    return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^a-zA-Z0-9]/g, '');
+    return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^a-zA-Z0-9-]/g, '');
 }
 
 function setupCopyButtons() {
@@ -786,7 +790,7 @@ function setupCopyButtons() {
 }
 
 function generateCSV() {
-    const header = 'utm_string,full_url'; // v3.0 Reduced Columns
+    const header = 'campaign_name,ad_group_name,ad_name,utm_string,full_url'; // v3.3 Added naming columns
     const rows = [header];
 
     // We need to regenerate the exact mapping to ensure rows align.
@@ -837,7 +841,12 @@ function generateCSV() {
                             fullUrl = `(LP_URL_REQUIRED)${utmString}`;
                         }
 
-                        rows.push(`${utmString},${fullUrl}`);
+                        // v3.3 Generate campaign, ad group, ad names
+                        const campaignName = `${dateStr}_${modeStr}_${eventStr}`;
+                        const adGroupName = seg ? `${dateStr}_${eventStr}_${r}_${seg}` : `${dateStr}_${eventStr}_${r}`;
+                        const adName = `${dateStr}_${eventStr}_${p}_${cleanSz}`;
+
+                        rows.push(`${campaignName},${adGroupName},${adName},${utmString},${fullUrl}`);
                     });
                 });
             });

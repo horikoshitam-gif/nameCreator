@@ -82,7 +82,7 @@
                         <input type="text" id="targetInput" class="input-minimal" placeholder="例: HR, Engineer">
                     </div>
                     <div class="col">
-                        <label class="label-minimal">セグメント <span class="sub-label">(任意)</span></label>
+                        <label class="label-minimal">セグメント（広告セット軸） <span class="sub-label">(任意)</span></label>
                         <div class="tag-input-container" id="segmentTagContainer">
                             <div class="tags-list" id="segmentTags"></div>
                             <input type="text" id="segmentInput" class="tag-input" placeholder="例: Position">
@@ -102,11 +102,16 @@
                 <div class="row">
                     <div class="col">
                         <label class="label-minimal">パターン</label>
-                        <div class="chip-container" id="patternChips">
-                            <button class="chip multi" data-value="A">A</button>
-                            <button class="chip multi" data-value="B">B</button>
-                            <button class="chip multi" data-value="C">C</button>
-                            <button class="chip multi" data-value="D">D</button>
+                        <div class="tag-input-container" id="patternTagContainer">
+                            <div class="tags-list" id="patternTags"></div>
+                            <input type="text" id="patternInput" class="tag-input" placeholder="例: A (Enterで追加)">
+                        </div>
+                        <div class="quick-add-row" id="patternQuickAdd">
+                            <span class="label-sub">Quick Add:</span>
+                            <button class="text-btn" data-pattern="A">A</button>
+                            <button class="text-btn" data-pattern="B">B</button>
+                            <button class="text-btn" data-pattern="C">C</button>
+                            <button class="text-btn" data-pattern="D">D</button>
                         </div>
                     </div>
                     <div class="col">
